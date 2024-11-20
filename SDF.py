@@ -1,6 +1,8 @@
-/*
-Plots the standard SDF output files using sdf_helper's plot_auto function
-*/
+
+#Plots the standard SDF output files using
+#sdf_helper's plot_auto function
+
+
 
 import sdf_helper as sh
 import numpy as np
