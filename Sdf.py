@@ -22,21 +22,22 @@ array = np.array([])
 
 
 starts = ["implicit"]
-
+tstart = 0.0 
 for start in starts:
     artists = []
     fig, (ax1,ax2) = plt.subplots(1,2, sharey = True)
     fig2, ax3 = plt.subplots()
     artists2 = []
-    for i in range(101):
+    for i in range(5):
         #i+=100 
         si = (4 -  len(str(i)))*"0" + str(i)
-        data1 = sh.getdata("../../Lare2d-dev/Data/implic-all/" + si + ".sdf")
-        data2 = sh.getdata("../../Lare2d-dev/Data/sh1000/" + si + ".sdf")
+        data1 = sh.getdata("../../Lare2d-dev/Data/" + si + ".sdf")
+        data2 = sh.getdata("../../Lare2d-dev/Data/" + si + ".sdf")
+        #data2 = sh.getdata("../../Lare2d-dev/Data/sh1000/" + si + ".sdf")
 
         #rho = data.Fluid_Rho
         #vx = data.Velocity_Vx
-        #vy = data.Velocity_Vy
+        vy = data1.Velocity_Vy
         #bx = data.Magnetic_Field_Bx
         #by = data.Magnetic_Field_By
         #e = data.Fluid_Energy
@@ -61,15 +62,15 @@ for start in starts:
         tdiff = (temp1 - temp2) / temp2 * 100
 
         #density = rho.data[2] * 1.003 * 10**(-6)
-        #velocity = vy.data[2] * 892 
+        velocity = vy.data[2] * 892 
         time_norm = 170 * 10**6 / 892 
         time = 10**(-4) * (i - 100) * time_norm
-        print(time)
+        
         y = np.linspace(0, 170, len(temp1))
         ax1.set_xlabel("Distance along loop / Mm")
         
-        fig.suptitle("Radiation and heating")
-        ax1.set_title("Implicit")
+        fig.suptitle("Radiation and heating (TRAC + flux limiting)")
+        ax1.set_title("snb")
         ax1.set_ylabel("Temperature / K")
         ax1.set_yscale("log")
         plot1, = ax1.plot(y, temp1, color = "b")
@@ -78,25 +79,30 @@ for start in starts:
         ax2.set_ylabel("Temperature / K")
         ax2.set_yscale("log")
         ax2.set_xlabel("Distance along loop / Mm")
-        ax2.set_title("Superstepping")
+        ax2.set_title("implicit")
         
-        artists.append([plot1,plot2])
+        artists.append([plot1, plot2])
 
-        ax3.set_title("Percentage difference in temperature")
+        y = np.linspace(0, 170, len(temp1))
+        ax3.set_title("Percentage difference in temperature (TRAC + FL)")
         ax3.set_ylabel("$T_{imp}$ - $T_{super}$ / %")
+        #ax3.set_title("Velocity (Townsend method)")
+        #ax3.set_ylabel("Velocity / m/s ")
         ax3.set_xlabel("Distance along loop / Mm")
+        #ax3.set_ylim(-5000,5000)
         plot3 = ax3.plot(y, tdiff, color = "r")
         fig2.tight_layout() 
         artists2.append(plot3)
         #ax2.plot(y,density, label = start)
         #ax2.set_ylabel("Density / kgm$^-3$")
         #ax2.set_yscale("log")
+    
     ani = animation.ArtistAnimation(fig = fig, artists = artists,interval = 400)
-    ani.save(filename="all.gif", writer = "pillow")
+    #ani.save(filename="exacttf.gif", writer = "pillow")
     
     ani2 = animation.ArtistAnimation(fig = fig2, artists = artists2, interval = 400)
     plt.show()
-    ani2.save(filename="all-difference.gif", writer = "pillow")    
+    #ani2.save(filename="exact-velocity.gif", writer = "pillow")    
 
             #print(temp[0], temp[1], temp[2], temp[3])
          #plt.savefig("SH" + si + ".png")
