@@ -16,13 +16,16 @@ def next_image(key):
 listener = Listener(on_press = next_image)
 listener.start()
 
-temp_norm = 115.27582493
+temp_norm = 96.4
 rho_norm = 10**-6
 
 avt = np.array([])
 avr = np.array([])
 chrom = np.array([])
 time = np.array([])
+xfield = np.array([])
+yfield = np.array([])
+velocity = np.array([])
 apext = np.array([])
 apexr = np.array([])
 foott = np.array([])
@@ -32,30 +35,33 @@ intensity = np.array([])
 times = []
 
 t500 = 3 * 10**6
-nt = 100 
+nt = 50 
 
 tstart = 0.2
 #starts = ["Q1fs1", "Q1fs2", "Q1fs3", "Q2fs1", "Q2fs2", "Q2fs3", "Q3fs1", "Q3fs2", "Q3fs3"]
-starts = ["sh", "snb", "sh-rad", "snb-rad"]
+starts = ["newsh", "new"]
 for start in starts:
     first = True
     for i in range(nt):
-        i += 112
+        #i += 200
         si = (4 - len(str(i)))*"0" + str(i)
-        if ("new" in start):
-            data = sh.getdata("../../Lare2d-dev/Data/"  + si + ".sdf")
+        if ("data" in start):
+            data = sh.getdata("../../Lare2d-dev/Data/" + si + ".sdf")
         elif ("large" in start):
             data = sh.getdata("../../Lare2d-dev/Data/21-big/" + si + ".sdf")
-        elif ("2" in start):
-            data = sh.getdata("../../Lare2d-dev/Data/initialtsh/" + start[:-1] + "/" + si + ".sdf")
+        elif ("Dirac" in start):
+            data = sh.getdata("../DiracData/waves/FL2/" + si + ".sdf")
         else:  
-            data = sh.getdata("../../Lare2d-dev/Data/initialt/" + start + "/" + si + ".sdf")
+            #data = sh.getdata("../../Lare2d-dev/Data/" + start + "/" + si + ".sdf")
+            data = sh.getdata("../DiracData/reconnection/" + start + "/" + si + ".sdf")
 
         time = np.append(time, t)  
         
-        temp = data.Fluid_Temperature.data[2] * temp_norm
-        rho = data.Fluid_Rho.data[2] * rho_norm  
-        
+        temp = data.Fluid_Temperature.data[100] * temp_norm
+        rho = data.Fluid_Rho.data[460] * rho_norm  
+        by = data.Magnetic_Field_By.data[100][199]
+        bx = data.Magnetic_Field_Bx.data[100][199]
+
         if (start == "lim1000"):
             lbl = "flux-limited"
         elif (start == "sh1000"):
@@ -70,12 +76,10 @@ for start in starts:
         
         #plt.plot(y, rho, label = lbl)     
         
-        for j in range(len(temp)):
-            if (temp[j] > 1e5):
-                yc = j
-                break
-        foott = np.append(foott, temp[116])
-        footr = np.append(footr, rho[116])
+        #for j in range(len(temp)):
+        #    if (temp[j] > 1e5):
+        #        yc = j
+        #        break
         
         intensity = np.append(intensity, np.sum(rho**2 * temp**4))
 
@@ -105,14 +109,19 @@ for start in starts:
         avt = np.append(avt, np.average(temp))
         avr = np.append(avr, np.average(rho))
         #chrom = np.append(chrom, t[yc])
-        apext = np.append(apext, temp[int(len(temp)/2)])
+        apext = np.append(apext, max(data.Fluid_Temperature.data[int(len(temp)/2)]))
         apexr = np.append(apexr, rho[int(len(rho)/2)])
+        
+        foott = np.append(foott, temp[150])
+        footr = np.append(footr, rho[150])
 
         if (temp[int(len(temp)/2)] < 5.0e6 and first):
             times.append((t - time[0]) * 78609.82097)
             first = False
 
-
+        velocity = np.append(velocity, vy)
+        xfield = np.append(xfield, bx)
+        yfield = np.append(yfield, by)
 #for i in range(len(starts)):
 #        apext[i*nt: (i+1)*nt] /= apext[(i+1)*nt-1]
 #        apexr[i*nt: (i+1)*nt] /= apexr[(i+1)*nt-1]
@@ -125,51 +134,72 @@ print(times)
 #plt.yscale("log")
 #plt.legend()
 #plt.show()
-starts = ['SH', 'SNB', 'SH - no rad. losses', 'SNB - no rad. losses']
+starts = ['SH', 'FL']
 t_end = 10000 
 #time = np.linspace(0,t_end,nt)
-time = (time - time[0]) * 78609.82097
+time = (time - time[0]) * 122799
+xfield = (xfield - xfield[0]) * 0.002
+yfield = (yfield - yfield[0]) * 0.002
+
+for i in range(len(starts)):
+    plt.plot(time[i*nt:(i+1)*nt], xfield[i*nt:(i+1)*nt], label = "x")
+    plt.plot(time[i*nt:(i+1)*nt], yfield[i*nt:(i+1)*nt], label = "y")
+plt.legend()
+
+plt.show()
+
+
 for i in range(len(starts)):
     if i > 1: linestyle = '--'
     else: linestyle = '-'
-    if (i%2 == 0): colour = 'k'
-    else: colour = 'r'
+    if (i%3 == 0): colour = 'r'
+    elif (i%3 ==1): colour = 'g'
+    else: colour = 'k'
     plt.plot(time[i*nt:(i+1)*nt], apext[i*nt:(i+1)*nt] / 10**6, label = starts[i], linestyle = linestyle, color = colour)
     
-#plt.title("Apex temperature")
-for i in range(nt):
-    if (abs(apext[i] - apext[2*nt + i]) > apext[i] / 100):
-        t1 = time[i]
-        break
-for i in range(nt):
-    if (abs(apext[i+nt] - apext[3*nt + i]) > apext[i+nt] / 100):
-        t2 = time[i]
-        break
-print(t1,t2)
+plt.title("Footpoint temperature")
+#for i in range(nt):
+#    if (abs(apext[i] - apext[2*nt + i]) > apext[i] / 100):
+#        t1 = time[i]
+#        break
+#for i in range(nt):
+#    if (abs(apext[i+nt] - apext[3*nt + i]) > apext[i+nt] / 100):
+#        t2 = time[i]
+#        break
+#print(t1,t2)
 #plt.axvline(t1, color = 'k', linestyle = '-.')
 #plt.axvline(t2, color = 'r', linestyle = '-.')
-plt.ylabel("Temperature [MK]", fontsize = 18)
-plt.xlabel("Time [s]", fontsize = 18)
+plt.ylabel("Temperature [MK]", fontsize = 16)
+plt.xlabel("Time [s]", fontsize = 16)
 plt.yticks(fontsize = 13)
 plt.xticks(fontsize = 13)
 #plt.yscale("log")
 plt.legend(fontsize = 13)
 plt.tight_layout()
 fig = plt.gcf()
-fig.set_size_inches(8, 5)
-plt.savefig("apext.svg", format = 'svg')
+fig.set_size_inches(7, 5)
+#plt.savefig("apext.pdf", format = 'pdf')
 plt.show()
 
 for i in range(len(starts)):
-    plt.plot(time[i*nt:(i+1)*nt], apexr[i*nt:(i+1)*nt], label = starts[i])
+    if i > 1: linestyle = '--'
+    else: linestyle = '-'
+    if (i%3 == 0): colour = 'r'
+    elif (i%3 ==1): colour = 'g'
+    else: colour = 'k'
+    plt.plot(time[i*nt:(i+1)*nt], footr[i*nt:(i+1)*nt]*10**12, label = starts[i], color = colour, linestyle = linestyle)
 
-#plt.title("Apex density")
-plt.ylabel("Density / kg/$m^3$")
-plt.xlabel("time / s")
+plt.title("Footpoint density")
+plt.ylabel("Density / $10^{-12}$kg/$m^3$", fontsize = 16)
+plt.xlabel("Time / s", fontsize = 16)
+plt.yticks(fontsize = 13)
+plt.xticks(fontsize = 13)
 #plt.yscale("log")
-plt.legend()
+plt.legend(fontsize = 13)
 plt.tight_layout()
-#plt.savefig("apexr.png")
+fig = plt.gcf()
+fig.set_size_inches(7, 5)
+plt.savefig("footdensity.png")
 plt.show()
 
 

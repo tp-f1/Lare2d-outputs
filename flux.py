@@ -222,15 +222,17 @@ def get_1d_data(data_path, file_ind, x_ind, variable='Rho'):
     
     return np.array(x), np.array(y), y_label, time
 
-fig, (ax1, ax2) = plt.subplots(1, 2, sharey = True)
+fig, (ax1, ax2) = plt.subplots(1, 2, sharey = False, figsize = (10,4))
 artists = []
 first = True
-for i in range(120):
+for i in range(1):
     #i *= 10
-    i += 100
-    x, rho, _, t = get_1d_data("/home/physics/phubjv/Lare2d-dev/Data/sergey/snb/", i, 3, variable='Rho')
-    x, temp, _, t = get_1d_data("/home/physics/phubjv/Lare2d-dev/Data/sergey/snb/", i, 3, variable='Temperature')
-    
+    i += 120
+    x, rho, _, t = get_1d_data("/home/physics/phubjv/Documents/Lare2d/Flares/10^20/SNB/", i, 3, variable='Rho')
+    x, temp, _, t = get_1d_data("/home/physics/phubjv/Documents/Lare2d/Flares/10^20/SNB/", i, 3, variable='Temperature')
+    x2, temp2, _, t2 = get_1d_data("/home/physics/phubjv/Documents/Lare2d/Flares/10^20/SH/", i, 3, variable = 'Temperature')
+    x2, rho2, _, t2 = get_1d_data("/home/physics/phubjv/Documents/Lare2d/Flares/10^20/SH/", i, 3, variable = 'Rho')
+
     x = x * 1e6
 
     if (first): 
@@ -238,24 +240,44 @@ for i in range(120):
         first = False
 
     xb, Q_SH_B, Q_SNB, Q_lim_l, Te, _ = snb(temp, rho/m, x)
+    xb2, Q_SH_B2, Q_SNB2, Q_lim_l2, Te2, _ = snb(temp2, rho2/m, x2)
+        
+    xb /= 1.e6
+    Te /= 1.e6
+    Te2 /= 1.e6
     
-    ttl = plt.text(0.9, 1.05, "time = " + "{:.2f}".format(t - initial), transform = ax1.transAxes) 
-    ax1.set_title("SNB")
-    ax2.set_title("SH")
-    ax1.set_ylim(-5.e5, 5.e5)
-    plot1, = ax1.plot(xb, Q_SNB, label = "snb", color = 'g')
-    plot2, = ax2.plot(xb, Q_SH_B, label = "sh", color = 'b')
+    
+    ttl = plt.text(1.0, 1.05, "$t$ = " + "{:.0f}s".format(t- 15000), transform = ax1.transAxes, fontsize = 14) 
+    ax1.set_title("Temperature", fontsize = 14)
+    ax2.set_title("Heat Flux", fontsize = 14)
+    ax1.set_xlim(20, 50)
+    ax2.set_xlim(20, 50)
+    ax1.set_ylim(1, 11)
+    ax2.set_yscale('symlog', linthresh = 2000)
+    ax1.plot(xb, Te2, label = 'SH', color = 'k')
+    plot1, = ax1.plot(xb, Te, label = 'SNB', color = 'r', linestyle = '--')
+    ax2.plot(xb, Q_SH_B2, label = 'SH', color = 'k')
+    ax2.plot(xb, Q_SNB, label = "SNB", color = 'r', linestyle = '--')
+    plot2, = ax2.plot(xb, Q_SH_B, label = "SH (SNB run)", color = 'grey', linestyle = ':')
+    ax1.set_xlabel("Distance along the loop [Mm]", fontsize = 12)
+    ax2.set_xlabel("Distance along the loop [Mm]", fontsize = 12)
+    ax1.set_ylabel("Temperature [MK]", fontsize = 12)
+    ax2.set_ylabel("Heat Flux [W/m$^2$]", fontsize = 12)
+    ax1.legend() 
+    ax2.legend()
+    #fig.subplots_adjust(wspace=0.3)
+    plt.tight_layout()
     #if (i == 100): 
      #   legend = ax.legend()
-    artists.append([plot1, plot2, ttl])
+    #artists.append([plot1, plot2, ttl])
     #ax.set_ylim(min(Q_SH_B), max(Q_SH_B))
-    
-    #plt.savefig("python-script.png")
-    #plt.show()
-ani = animation.ArtistAnimation(fig = fig, artists = artists, interval = 100)
+    print(t) 
+    plt.savefig("heat_flux.pdf")
+    plt.show()
+#ani = animation.ArtistAnimation(fig = fig, artists = artists, interval = 100)
 #ax.add_artist(legend)
-ani.save(filename = "SNB_flare.gif", writer = "pillow")
-plt.show()
+#ani.save(filename = "SNB_flare.gif", writer = "pillow")
+#plt.show()
 
 
 
