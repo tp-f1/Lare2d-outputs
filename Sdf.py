@@ -3,6 +3,7 @@ import sdf_helper as sh
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+from scipy.constants import mu_0, epsilon_0, k, m_p
 from pynput.keyboard import Listener, Key
 import matplotlib.animation as animation
 
@@ -17,9 +18,18 @@ array = np.array([])
 temps = np.empty((0,1400), float)
 rhos = np.empty((0,1400), float)
 
+B0 = 0.001
+L0 = 1.e6
+rho0 = 1.e-6
+
+v0 = B0 / np.sqrt(mu_0 * rho0)
+T0 = v0**2 * 1.2 * m_p / k
+t0 = L0 / v0
+print(v0)
 
 starts = ["snb"]
 tstart = 0.0 
+
 for start in starts:
     artists = []
     #fig, (ax1, ax2) = plt.subplots(1,2, sharey = False)
@@ -27,34 +37,47 @@ for start in starts:
     #fig2, ax3 = plt.subplots()
     artists2 = []
     for i in range(100):
-        #i*=5
-        #i+=15 
+        
+        i*=5
+        #i+=158
         si = (4 -  len(str(i)))*"0" + str(i)
-        #data1 = sh.getdata("../../Lare2d-dev/Data/starts/100-snb42/" + si + ".sdf")
-        #data1 = sh.getdata("../DiracData/" + si + ".sdf")
-        data1 = sh.getdata("../../Lare2d-dev/Data/implicit/" + si + ".sdf")
-        data2 = sh.getdata("../../Lare2d-dev/Data/super/" + si + ".sdf")
-        data3 = sh.getdata("../../Lare2d-dev/Data/1d/" + si + ".sdf")
+        #data1 = sh.getdata("../../Lare2d-dev/Data/simple/strongSH/" + si + ".sdf")
+        #data1 = sh.getdata("../../Lare2d-dev/Data/snbsolar/" + si + ".sdf")
+        data1 = sh.getdata("../DiracData/fixed/3.5/fl/" + si + ".sdf")
+        data2 = sh.getdata("../DiracData/fixed/3.5/sh/" + si + ".sdf")
+        #data2 = sh.getdata("../../Lare2d-dev/Data/shsolar/" + si + ".sdf")
+        #data3 = sh.getdata("../../Lare2d-dev/Data/shlaser/" + si + ".sdf")
+        #data3 = sh.getdata("../../Lare2d-dev/Data/x-point/sh/" + si + ".sdf")
 
         rho = data1.Fluid_Rho
-        #vx = data.Velocity_Vx
+        vx = data1.Velocity_Vx
         vy = data1.Velocity_Vy
         vz = data1.Velocity_Vz
         bx = data1.Magnetic_Field_Bx
         by = data1.Magnetic_Field_By
-        bz = data1.Magnetic_Field_Bz
-        e = data1.Fluid_Energy
+        by2 = data2.Magnetic_Field_By
+        #eta1 = data1.PIP_eta
+        eta2 = data2.PIP_eta
+        #bz = data2.Magnetic_Field_Bz
+        #e = data3.Fluid_Energy
         #n = data.PIP_neutral_fraction
         p = data1.Fluid_Pressure
-        t1 = data1.Fluid_Temperature   
+        t1 = data1.Fluid_Temperature
         t2 = data2.Fluid_Temperature
-        t3 = data3.Fluid_Temperature
+        #t3 = data3.Fluid_Temperature
+        #t4 = data4.Fluid_Temperature
+        t = t * t0
+        #jx = data1.Current_Jx
+        #jy = data1.Current_Jy
+        #jz = data1.Current_Jz
+        #sh.list_variables(data1)
+        
 
-        #sh.list_variables(data)
-   
-        sh.plot_auto(p)
+        sh.plot_auto(t1)
         plt.show()
-    
+         
+        sh.plot_auto(t2)
+        plt.show()
         #sh.plot_auto(e)
         #plt.savefig("SH-" + si + ".png")
         #plt.clf()
@@ -65,21 +88,53 @@ for start in starts:
         #plt.savefig("temperature" + si + ".png") 
         #sh.plot_auto(rho)
         #plt.show()
-        
-            
-        temp1 = t1.data[1]
-        temp2 = t2.data[1]
-        temp3 = t3.data[1]
-        x = np.linspace(0,1,len(temp1))
-        plt.plot(x,temp1, label = "implicit")
-        plt.plot(x,temp2, label = "superstepping")
-        plt.plot(x,temp3, label = "1d")
+
+        B = by.data * B0
+        B = np.swapaxes(B,0,1)
+        B = B[250]
+        B2 = by2.data * B0
+        B2 = np.swapaxes(B2,0,1)
+        B2 = B2[100]
+        x = np.linspace(-0.4,0.4, len(B))
+        x2 = np.linspace(-0.4,0.4, len(B2))
+
+        #plt.plot(x,B,label = "thin")
+        #plt.plot(x2,B2,label = "wide")
+        #plt.legend()
+        #plt.show()
+"""
+        temp1 = t1.data * T0
+        #temp2 = t2.data * T0
+        temp3 = t3.data * T0
+        #temp4 = t4.data * T0
+        #temp1 = np.swapaxes(temp1, 0, 1)
+        #temp2 = np.swapaxes(temp2, 0, 1)
+        #temp3 = np.swapaxes(temp3, 0, 1)
+        #temp4 = np.swapaxes(temp4, 0, 1)
+        temp1 = temp1[50]
+        #temp2 = temp2[0]
+        temp3 = temp3[0]
+        #temp4 = temp4[1]
+        x = np.linspace(0,1,len(temp1)) * L0
+        #x2 = np.linspace(0,1,len(temp2)) * L0
+        x3 = np.linspace(0,1,len(temp3)) * L0
+        #x4 = np.linspace(0,1,len(temp4)) * L0
+        plt.plot(x,temp1, label = "snb")
+        #plt.plot(x2,temp2, label = "0")
+        #plt.plot(x3,temp3, label = "1d")
+        #plt.plot(x4,temp4, label = "0.5")
+        plt.title(f"{t:.2g} seconds")
+        #plt.xlim(0,1)
+        plt.ylabel("Temperature / K")
+        plt.xlabel("Distance / m")
         plt.legend()
+        #plt.savefig("finallaser.png") 
         plt.show()
 
+"""
         #ax2 = ax1.twinx()
 """
-        temp1 = t1.data[2] * 115.3
+        temp1 = t1.data[50] * 115.3
         density = rho.data[2] * 1.0067 * 10**(-6)
         print(temp1[int(len(temp1)/2)])
         print(density[int(len(density)/2)]) 
@@ -124,7 +179,7 @@ for start in starts:
         #ax2.set_title("Knudsen number")
         
         artists.append([plot1])
-        """#temps = np.append(temps, [temp1], axis = 0)
+        #temps = np.append(temps, [temp1], axis = 0)
         #rhos = np.append(rhos, [density], axis = 0)
 
         #y = np.linspace(0, 170, len(temp1))
@@ -186,4 +241,4 @@ plt.tight_layout()
 fig.set_size_inches(11,4)
 #plt.savefig("initialboth.pdf", format = 'pdf')
 plt.show()
-
+"""
